@@ -446,7 +446,17 @@ void copy_vert_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int Nz, int ha
     auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
     auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
 
-    vert_yee_haloKernel<<<{1+(Ny/8),1+(Nz/8),9},{8,8,halo}>>>(lhs_ptr, rhs_ptr, Ny, Nz, halo, ito, ifro, in);
+    auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    vert_yee_haloKernel<<<{1+(Ny/8),1+(Nz/8),9},{8,8,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Ny, Nz, halo, ito, ifro, in);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       //
@@ -473,7 +483,17 @@ void copy_horz_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Nz, int ha
     auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
     auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
 
-    horz_yee_haloKernel<<<{1+(Nx/8),1+(Nz/8),9},{8,8,halo}>>>(lhs_ptr, rhs_ptr, Nx, Nz, halo, jto, jfro, jn);
+    auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    horz_yee_haloKernel<<<{1+(Nx/8),1+(Nz/8),9},{8,8,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Nx, Nz, halo, jto, jfro, jn);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(i, jto+jn*g, k) = rhs_in.ex(i, jfro+jn*g, k);
@@ -499,7 +519,17 @@ void copy_face_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int ha
     auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
     auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
 
-    face_yee_haloKernel<<<{1+(Nx/8),1+(Ny/8),9},{8,8,halo}>>>(lhs_ptr, rhs_ptr, Nx, Ny, halo, kto, kfro, kn);
+    auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    face_yee_haloKernel<<<{1+(Nx/8),1+(Ny/8),9},{8,8,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Nx, Ny, halo, kto, kfro, kn);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
         lhs_in.ex(i, j, kto+kn*g) = rhs_in.ex(i, j, kfro+kn*g);
@@ -524,7 +554,18 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
     #ifdef GPU
     auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
     auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-    x_pencil_yee_haloKernel<<<{1+(Nx/8),9,1},{8,halo,halo}>>>(lhs_ptr, rhs_ptr, Nx, halo, jto, jfro, kto, kfro, jn, kn);
+
+    auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    x_pencil_yee_haloKernel<<<{1+(Nx/8),9,1},{8,halo,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Nx, halo, jto, jfro, kto, kfro, jn, kn);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(i, jto+jn*h, kto+kn*g) = rhs_in.ex(i, jfro+jn*h, kfro+kn*g);
@@ -547,7 +588,18 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
       #ifdef GPU
     auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
     auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-    y_pencil_yee_haloKernel<<<{1+(Ny/8),9,1},{8,halo,halo}>>>(lhs_ptr, rhs_ptr, Ny, halo, ito, ifro, kto, kfro, in, kn);
+    
+        auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    y_pencil_yee_haloKernel<<<{1+(Ny/8),9,1},{8,halo,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Ny, halo, ito, ifro, kto, kfro, in, kn);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
 
@@ -571,7 +623,18 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
       #ifdef GPU
     auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
     auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-    z_pencil_yee_haloKernel<<<{1+(Nz/8),9,1},{8,halo,halo}>>>(lhs_ptr, rhs_ptr, Nz, halo, ito, ifro, jto, jfro, in, jn);
+
+        auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    z_pencil_yee_haloKernel<<<{1+(Nz/8),9,1},{8,halo,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Nz, halo, ito, ifro, jto, jfro, in, jn);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
@@ -613,7 +676,17 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
     auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
     auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
 
-    pointKernel<<<{9},{halo,halo,halo}>>>(lhs_ptr, rhs_ptr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn);
+        auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    pointKernel<<<{9},{halo,halo,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn);
 
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
@@ -815,24 +888,6 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
             } else {
               // pointwise
               copy_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
-              /*
-              corners[indCorner].active = true;
-              corners[indCorner].ito = ito;
-              corners[indCorner].ifro = ifro;
-              corners[indCorner].jto = jto;
-              corners[indCorner].jfro = jfro;
-              corners[indCorner].kto = kto;
-              corners[indCorner].kfro = kfro;
-              corners[indCorner].in = in;
-              corners[indCorner].jn = jn;
-              corners[indCorner].kn = kn;
-              corners[indCorner].yeePtrFrom = &mesh; 
-              UniIter::UniIterCU::reg(mesh); 
-              UniIter::UniIterCU::reg(mpr); 
-              corners[indCorner].yeePtrTo = &mpr;
-              corners[indCorner].yeePtrTo = &mpr;
-              indCorner++;
-              */
             } 
             ind++;
           } // 3D cases with kn != 0
@@ -840,55 +895,7 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
       } // kn
     } // jn
   } // in
-/*
-  UniIter::sync();
 
-    UniIter::iterate3D([=] DEVCALLABLE (int f8, int g ,int h, BlockCopyParam *corners){
-      int f = f8%halo;
-      int targetParam = f8/halo;
-
-
-      int ito = corners[targetParam].ito;
-      int ifro = corners[targetParam].ifro;
-      int jto = corners[targetParam].jto;
-      int jfro = corners[targetParam].jfro;
-      int kto  = corners[targetParam].kto ;
-      int kfro = corners[targetParam].kfro;
-      int in = corners[targetParam].in;
-      int jn = corners[targetParam].jn;
-      int kn = corners[targetParam].kn;
-
-      YeeLattice &rhs_in = *(corners[targetParam].yeePtrTo);
-      YeeLattice &lhs_in = *(corners[targetParam].yeePtrFrom);
-
-      
-      lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.ez(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
-
-      lhs_in.bx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.by(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.bz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
-
-      lhs_in.jx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
-    }, halo*8, halo, halo, corners);
-
-/*
-  for (int i = 0; i < 8; i++)
-  {
-      YeeLattice *yeePtrFrom = corners[i].yeePtrFrom;
-      YeeLattice *yeePtrTo = corners[i].yeePtrTo;
-    copy_point_yee_halo(
-      *yeePtrFrom, 
-      *yeePtrTo, 
-      halo, 
-      corners[i].ito, corners[i].ifro, corners[i].jto, corners[i].jfro, corners[i].kto, 
-      corners[i].kfro, corners[i].in, corners[i].jn, corners[i].kn, ind);
-    ind++;
-  }
-  */
   
   UniIter::sync();
 
