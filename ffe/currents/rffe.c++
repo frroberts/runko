@@ -28,6 +28,21 @@
 //  return 0.25*(f1 + f0);
 //}
 
+
+  template<>
+ffe::rFFE2<3>::rFFE2(int Nx, int Ny, int Nz) :
+    Nx(Nx), Ny(Ny), Nz(Nz),
+    bxf(Nx, Ny, Nz),
+    byf(Nx, Ny, Nz),
+    bzf(Nx, Ny, Nz),
+    exf(Nx, Ny, Nz),
+    eyf(Nx, Ny, Nz),
+    ezf(Nx, Ny, Nz),
+    rhf(Nx, Ny, Nz)
+  {
+        UniAllocator::registerClass(*this);
+  };
+
 // general trilinear interpolation
 template<>
 void ffe::rFFE2<3>::interpolate( 

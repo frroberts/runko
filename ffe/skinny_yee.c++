@@ -1,6 +1,24 @@
 #include "skinny_yee.h"
 #include "../em-fields/tile.h"
 
+#include "../tools/iter/iter.h"
+
+  // real initializer constructor
+  ffe::SkinnyYeeLattice::SkinnyYeeLattice(int Nx, int Ny, int Nz) : 
+    Nx(Nx), Ny(Ny), Nz(Nz),
+
+    ex(Nx, Ny, Nz),
+    ey(Nx, Ny, Nz),
+    ez(Nx, Ny, Nz),
+
+    bx(Nx, Ny, Nz),
+    by(Nx, Ny, Nz),
+    bz(Nx, Ny, Nz)
+    { 
+    UniAllocator::registerClass(*this);
+      
+    }
+
 
 ffe::SkinnyYeeLattice& 
   ffe::SkinnyYeeLattice::operator +=(const ffe::SkinnyYeeLattice& rhs)

@@ -26,6 +26,37 @@ void Tile<D>::deposit_current()
 
 }
 
+  // real initializer constructor
+YeeLattice::YeeLattice(int Nx, int Ny, int Nz) : 
+    Nx{Nx}, Ny{Ny}, Nz{Nz},
+    ex{Nx, Ny, Nz},
+    ey{Nx, Ny, Nz},
+    ez{Nx, Ny, Nz},
+    bx{Nx, Ny, Nz},
+    by{Nx, Ny, Nz},
+    bz{Nx, Ny, Nz},
+    rho{Nx, Ny, Nz},
+    jx{Nx, Ny, Nz},
+    jy{Nx, Ny, Nz},
+    jz{Nx, Ny, Nz}
+  { 
+    generateCommIndexes();
+
+
+    data_ptrs[0] = ex.data();
+    data_ptrs[1] = ey.data();
+    data_ptrs[2] = ez.data();
+    data_ptrs[3] = bx.data();
+    data_ptrs[4] = by.data();
+    data_ptrs[5] = bz.data();
+    data_ptrs[6] = jx.data();
+    data_ptrs[7] = jy.data();
+    data_ptrs[8] = jz.data();
+
+    UniAllocator::registerClass(*this);
+  }
+
+
 
 /// Get current time snapshot of Yee lattice
 template<std::size_t D>
@@ -443,8 +474,8 @@ void copy_vert_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int Nz, int ha
     //
     #ifdef GPU
 
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
 
     auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
     if (search != UniIter::UniIterCU::streams.end()) {
@@ -480,8 +511,8 @@ void copy_horz_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Nz, int ha
 {
     #ifdef GPU
 
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
 
     auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
     if (search != UniIter::UniIterCU::streams.end()) {
@@ -516,8 +547,8 @@ void copy_face_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int ha
 {
     #ifdef GPU
 
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
 
     auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
     if (search != UniIter::UniIterCU::streams.end()) {
@@ -552,8 +583,8 @@ void copy_face_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int ha
 void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, int jto, int jfro, int kto, int kfro, int jn, int kn, int ind=0)
 {   
     #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
 
     auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
     if (search != UniIter::UniIterCU::streams.end()) {
@@ -586,8 +617,8 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
   void copy_y_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn, int ind=0)
 {   
       #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
     
         auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
     if (search != UniIter::UniIterCU::streams.end()) {
@@ -621,8 +652,8 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
   void copy_z_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn, int ind=0)
 {
       #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
 
         auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
     if (search != UniIter::UniIterCU::streams.end()) {
@@ -673,8 +704,8 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
   void copy_point_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn, int ind=0)
   {
     #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
 
         auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
     if (search != UniIter::UniIterCU::streams.end()) {
@@ -1338,18 +1369,18 @@ void YeeLattice::generateCommIndexes()
 }
 
 
-void YeeLattice::gatherCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer)
+void YeeLattice::gatherCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short*& commBuffer)
 {
   UniIter::iterate([] DEVCALLABLE (int i, int *indexes, real_short *inData, real_short* commBuffer){
     commBuffer[i] = inData[indexes[i]];
-  }, commSize, commIndexesArr, inMesh.data(), commBuffer);
+  }, commSize, commIndexesArr, inMesh.ptr, commBuffer);
 }
 
-void YeeLattice::scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer)
+void YeeLattice::scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short*& commBuffer)
 {
   UniIter::iterate([] DEVCALLABLE (int i, int* indexes, real_short *inData, real_short* commBuffer){
     inData[indexes[i]] = commBuffer[i];
-  }, commSize, commIndexesArr, inMesh.data(), commBuffer);
+  }, commSize, commIndexesArr, inMesh.ptr, commBuffer);
 }
 
 //--------------------------------------------------
