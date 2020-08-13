@@ -40,7 +40,7 @@ ffe::rFFE2<3>::rFFE2(int Nx, int Ny, int Nz) :
     ezf(Nx, Ny, Nz),
     rhf(Nx, Ny, Nz)
   {
-        UniAllocator::registerClass(*this);
+        DEV_REGISTER
   };
 
 // general trilinear interpolation

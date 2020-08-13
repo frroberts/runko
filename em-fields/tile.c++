@@ -53,7 +53,7 @@ YeeLattice::YeeLattice(int Nx, int Ny, int Nz) :
     data_ptrs[7] = jy.data();
     data_ptrs[8] = jz.data();
 
-    UniAllocator::registerClass(*this);
+    DEV_REGISTER
   }
 
 

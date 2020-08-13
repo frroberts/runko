@@ -1,7 +1,7 @@
 #include "skinny_yee.h"
 #include "../em-fields/tile.h"
 
-#include "../tools/iter/iter.h"
+#include "../tools/iter/allocator.h"
 
   // real initializer constructor
   ffe::SkinnyYeeLattice::SkinnyYeeLattice(int Nx, int Ny, int Nz) : 
@@ -15,7 +15,7 @@
     by(Nx, Ny, Nz),
     bz(Nx, Ny, Nz)
     { 
-    UniAllocator::registerClass(*this);
+    DEV_REGISTER
       
     }
 
