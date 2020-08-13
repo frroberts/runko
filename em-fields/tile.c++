@@ -1373,14 +1373,14 @@ void YeeLattice::gatherCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short
 {
   UniIter::iterate([] DEVCALLABLE (int i, int *indexes, real_short *inData, real_short* commBuffer){
     commBuffer[i] = inData[indexes[i]];
-  }, commSize, commIndexesArr, inMesh.ptr, commBuffer);
+  }, commSize, commIndexesArr, inMesh.data(), commBuffer);
 }
 
 void YeeLattice::scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short*& commBuffer)
 {
   UniIter::iterate([] DEVCALLABLE (int i, int* indexes, real_short *inData, real_short* commBuffer){
     inData[indexes[i]] = commBuffer[i];
-  }, commSize, commIndexesArr, inMesh.ptr, commBuffer);
+  }, commSize, commIndexesArr, inMesh.data(), commBuffer);
 }
 
 //--------------------------------------------------
