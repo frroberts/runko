@@ -27,7 +27,19 @@ class rFFE2
   toolbox::Mesh<real_short, 0> rhf;
 
 
-  rFFE2(int Nx, int Ny, int Nz);
+  rFFE2(int Nx, int Ny, int Nz):
+    Nx(Nx), Ny(Ny), Nz(Nz),
+    bxf(Nx, Ny, Nz),
+    byf(Nx, Ny, Nz),
+    bzf(Nx, Ny, Nz),
+    exf(Nx, Ny, Nz),
+    eyf(Nx, Ny, Nz),
+    ezf(Nx, Ny, Nz),
+    rhf(Nx, Ny, Nz)
+  {
+        DEV_REGISTER
+  };
+
   virtual ~rFFE2() = default;
 
 

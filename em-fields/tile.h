@@ -53,7 +53,35 @@ class YeeLattice
   YeeLattice()  = default;
 
   // real initializer constructor
-  YeeLattice(int Nx, int Ny, int Nz);
+  YeeLattice(int Nx, int Ny, int Nz): 
+    Nx{Nx}, Ny{Ny}, Nz{Nz},
+    ex{Nx, Ny, Nz},
+    ey{Nx, Ny, Nz},
+    ez{Nx, Ny, Nz},
+    bx{Nx, Ny, Nz},
+    by{Nx, Ny, Nz},
+    bz{Nx, Ny, Nz},
+    rho{Nx, Ny, Nz},
+    jx{Nx, Ny, Nz},
+    jy{Nx, Ny, Nz},
+    jz{Nx, Ny, Nz}
+  { 
+    generateCommIndexes();
+
+
+    data_ptrs[0] = ex.data();
+    data_ptrs[1] = ey.data();
+    data_ptrs[2] = ez.data();
+    data_ptrs[3] = bx.data();
+    data_ptrs[4] = by.data();
+    data_ptrs[5] = bz.data();
+    data_ptrs[6] = jx.data();
+    data_ptrs[7] = jy.data();
+    data_ptrs[8] = jz.data();
+
+    DEV_REGISTER
+  }
+
 
   // copy ctor
   YeeLattice(YeeLattice& other) = default;

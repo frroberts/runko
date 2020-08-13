@@ -40,7 +40,20 @@ class SkinnyYeeLattice {
 
 
   // real initializer constructor
-  SkinnyYeeLattice(int Nx, int Ny, int Nz);
+  SkinnyYeeLattice(int Nx, int Ny, int Nz):    
+  Nx(Nx), Ny(Ny), Nz(Nz),
+    ex(Nx, Ny, Nz),
+    ey(Nx, Ny, Nz),
+    ez(Nx, Ny, Nz),
+
+    bx(Nx, Ny, Nz),
+    by(Nx, Ny, Nz),
+    bz(Nx, Ny, Nz)
+    { 
+    DEV_REGISTER
+      
+    }
+
 
   ~SkinnyYeeLattice() = default;
 

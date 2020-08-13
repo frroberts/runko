@@ -3,21 +3,6 @@
 
 #include "../tools/iter/allocator.h"
 
-  // real initializer constructor
-  ffe::SkinnyYeeLattice::SkinnyYeeLattice(int Nx, int Ny, int Nz) : 
-    Nx(Nx), Ny(Ny), Nz(Nz),
-
-    ex(Nx, Ny, Nz),
-    ey(Nx, Ny, Nz),
-    ez(Nx, Ny, Nz),
-
-    bx(Nx, Ny, Nz),
-    by(Nx, Ny, Nz),
-    bz(Nx, Ny, Nz)
-    { 
-    DEV_REGISTER
-      
-    }
 
 
 ffe::SkinnyYeeLattice& 
