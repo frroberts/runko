@@ -181,10 +181,10 @@ class Mesh
 
     /// address to data
     DEVCALLABLE
-    T* data() { return ptr; }
+    T*& data() { return ptr; }
     
     DEVCALLABLE
-    const T* data() const {return ptr; }
+    const T*& data() const {return ptr; }
 
     /// internal storage size
     size_t size() const { return count; }
@@ -238,6 +238,7 @@ class Mesh
         ptr = UniAllocator::allocate<T>(count_);
         allocated = true;
         count = count_;
+        
 			  return;
       }
 

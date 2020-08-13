@@ -40,28 +40,10 @@ class YeeLattice
   toolbox::Mesh<real_short, 3> jy;
   toolbox::Mesh<real_short, 3> jz;
 
-  real_short* ex_comm;
-  real_short* ey_comm;
-  real_short* ez_comm;
+  real_short* x_comm;
+  real_short* y_comm;
+  real_short* z_comm;
   
-  /// Magnetic field 
-  real_short* bx_comm;
-  real_short* by_comm;
-  real_short* bz_comm;
-    
-  /// Current vector 
-  real_short* jx_comm;
-  real_short* jy_comm;
-  real_short* jz_comm;
-
-  real_short* x_commHost;
-  real_short* y_commHost;
-  real_short* z_commHost;
-
-  real_short* x_commDev;
-  real_short* y_commDev;
-  real_short* z_commDev;
-
   int *commIndexesArr;
   int commSize = 0;
 
@@ -71,32 +53,7 @@ class YeeLattice
   YeeLattice()  = default;
 
   // real initializer constructor
-  YeeLattice(int Nx, int Ny, int Nz) : 
-    Nx{Nx}, Ny{Ny}, Nz{Nz},
-    ex{Nx, Ny, Nz},
-    ey{Nx, Ny, Nz},
-    ez{Nx, Ny, Nz},
-    bx{Nx, Ny, Nz},
-    by{Nx, Ny, Nz},
-    bz{Nx, Ny, Nz},
-    rho{Nx, Ny, Nz},
-    jx{Nx, Ny, Nz},
-    jy{Nx, Ny, Nz},
-    jz{Nx, Ny, Nz}
-  { 
-    generateCommIndexes();
-
-
-    data_ptrs[0] = ex.data();
-    data_ptrs[1] = ey.data();
-    data_ptrs[2] = ez.data();
-    data_ptrs[3] = bx.data();
-    data_ptrs[4] = by.data();
-    data_ptrs[5] = bz.data();
-    data_ptrs[6] = jx.data();
-    data_ptrs[7] = jy.data();
-    data_ptrs[8] = jz.data();
-  }
+  YeeLattice(int Nx, int Ny, int Nz);
 
   // copy ctor
   YeeLattice(YeeLattice& other) = default;
@@ -115,6 +72,7 @@ class YeeLattice
   // public swap for efficient memory management
   friend void swap(YeeLattice& first, YeeLattice& second)
   {
+    std::cout << "swapping" << std::endl;
     using std::swap;
     swap(first.Nx,  second.Nx);
     swap(first.Ny,  second.Ny);
@@ -130,22 +88,14 @@ class YeeLattice
     swap(first.jy , second.jy);
     swap(first.jz , second.jz);
 
-
-    swap(first.ex_comm , second.ex_comm);
-    swap(first.ey_comm , second.ey_comm);
-    swap(first.ez_comm , second.ez_comm);
-    swap(first.bx_comm , second.bx_comm);
-    swap(first.by_comm , second.by_comm);
-    swap(first.bz_comm , second.bz_comm);
-    swap(first.jx_comm , second.jx_comm);
-    swap(first.jy_comm , second.jy_comm);
-    swap(first.jz_comm , second.jz_comm);
+    swap(first.x_comm , second.x_comm);
+    swap(first.y_comm , second.y_comm);
+    swap(first.z_comm , second.z_comm);
 
     swap(first.data_ptrs , second.data_ptrs);
 
     swap(first.commSize , second.commSize);
     swap(first.commIndexesArr , second.commIndexesArr);
-
   }
 
   // copy-and-swap algorithm
@@ -161,8 +111,8 @@ class YeeLattice
   };
 
   void generateCommIndexes();
-  void gatherCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer);
-  void scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer);
+  void gatherCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short*& commBuffer);
+  void scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short*& commBuffer);
 };
 
 

@@ -26,6 +26,37 @@ void Tile<D>::deposit_current()
 
 }
 
+  // real initializer constructor
+YeeLattice::YeeLattice(int Nx, int Ny, int Nz) : 
+    Nx{Nx}, Ny{Ny}, Nz{Nz},
+    ex{Nx, Ny, Nz},
+    ey{Nx, Ny, Nz},
+    ez{Nx, Ny, Nz},
+    bx{Nx, Ny, Nz},
+    by{Nx, Ny, Nz},
+    bz{Nx, Ny, Nz},
+    rho{Nx, Ny, Nz},
+    jx{Nx, Ny, Nz},
+    jy{Nx, Ny, Nz},
+    jz{Nx, Ny, Nz}
+  { 
+    generateCommIndexes();
+
+
+    data_ptrs[0] = ex.data();
+    data_ptrs[1] = ey.data();
+    data_ptrs[2] = ez.data();
+    data_ptrs[3] = bx.data();
+    data_ptrs[4] = by.data();
+    data_ptrs[5] = bz.data();
+    data_ptrs[6] = jx.data();
+    data_ptrs[7] = jy.data();
+    data_ptrs[8] = jz.data();
+
+    DEV_REGISTER
+  }
+
+
 
 /// Get current time snapshot of Yee lattice
 template<std::size_t D>
@@ -443,10 +474,20 @@ void copy_vert_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int Nz, int ha
     //
     #ifdef GPU
 
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
 
-    vert_yee_haloKernel<<<{1+(Ny/8),1+(Nz/8),9},{8,8,halo}>>>(lhs_ptr, rhs_ptr, Ny, Nz, halo, ito, ifro, in);
+    auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    vert_yee_haloKernel<<<{1+(Ny/8),1+(Nz/8),9},{8,8,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Ny, Nz, halo, ito, ifro, in);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       //
@@ -470,10 +511,20 @@ void copy_horz_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Nz, int ha
 {
     #ifdef GPU
 
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
 
-    horz_yee_haloKernel<<<{1+(Nx/8),1+(Nz/8),9},{8,8,halo}>>>(lhs_ptr, rhs_ptr, Nx, Nz, halo, jto, jfro, jn);
+    auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    horz_yee_haloKernel<<<{1+(Nx/8),1+(Nz/8),9},{8,8,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Nx, Nz, halo, jto, jfro, jn);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(i, jto+jn*g, k) = rhs_in.ex(i, jfro+jn*g, k);
@@ -496,10 +547,20 @@ void copy_face_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int ha
 {
     #ifdef GPU
 
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
 
-    face_yee_haloKernel<<<{1+(Nx/8),1+(Ny/8),9},{8,8,halo}>>>(lhs_ptr, rhs_ptr, Nx, Ny, halo, kto, kfro, kn);
+    auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    face_yee_haloKernel<<<{1+(Nx/8),1+(Ny/8),9},{8,8,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Nx, Ny, halo, kto, kfro, kn);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
         lhs_in.ex(i, j, kto+kn*g) = rhs_in.ex(i, j, kfro+kn*g);
@@ -522,9 +583,20 @@ void copy_face_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int ha
 void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, int jto, int jfro, int kto, int kfro, int jn, int kn, int ind=0)
 {   
     #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-    x_pencil_yee_haloKernel<<<{1+(Nx/8),9,1},{8,halo,halo}>>>(lhs_ptr, rhs_ptr, Nx, halo, jto, jfro, kto, kfro, jn, kn);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
+
+    auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    x_pencil_yee_haloKernel<<<{1+(Nx/8),9,1},{8,halo,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Nx, halo, jto, jfro, kto, kfro, jn, kn);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(i, jto+jn*h, kto+kn*g) = rhs_in.ex(i, jfro+jn*h, kfro+kn*g);
@@ -545,9 +617,20 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
   void copy_y_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn, int ind=0)
 {   
       #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-    y_pencil_yee_haloKernel<<<{1+(Ny/8),9,1},{8,halo,halo}>>>(lhs_ptr, rhs_ptr, Ny, halo, ito, ifro, kto, kfro, in, kn);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
+    
+        auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    y_pencil_yee_haloKernel<<<{1+(Ny/8),9,1},{8,halo,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Ny, halo, ito, ifro, kto, kfro, in, kn);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
 
@@ -569,9 +652,20 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
   void copy_z_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn, int ind=0)
 {
       #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-    z_pencil_yee_haloKernel<<<{1+(Nz/8),9,1},{8,halo,halo}>>>(lhs_ptr, rhs_ptr, Nz, halo, ito, ifro, jto, jfro, in, jn);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
+
+        auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    z_pencil_yee_haloKernel<<<{1+(Nz/8),9,1},{8,halo,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, Nz, halo, ito, ifro, jto, jfro, in, jn);
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
@@ -610,10 +704,20 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
   void copy_point_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn, int ind=0)
   {
     #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
+    auto lhs_ptr = UniIter::UniIterCU::getDevPtr(lhs);
+    auto rhs_ptr = UniIter::UniIterCU::getDevPtr(rhs);
 
-    pointKernel<<<{9},{halo,halo,halo}>>>(lhs_ptr, rhs_ptr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn);
+        auto search = UniIter::UniIterCU::streams.find(std::to_string(ind));
+    if (search != UniIter::UniIterCU::streams.end()) {
+        //
+        //std::cout << "stream found using it" << std::endl;
+    } else {
+        UniIter::UniIterCU::streams[std::to_string(ind)] = cudaStream_t();
+        cudaStreamCreate(&UniIter::UniIterCU::streams[std::to_string(ind)]);
+        std::cout << "Not found stream crated" << std::endl;
+    }
+
+    pointKernel<<<{9},{halo,halo,halo}, 0, UniIter::UniIterCU::streams[std::to_string(ind)]>>>(lhs_ptr, rhs_ptr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn);
 
     #else
     UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
@@ -815,24 +919,6 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
             } else {
               // pointwise
               copy_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
-              /*
-              corners[indCorner].active = true;
-              corners[indCorner].ito = ito;
-              corners[indCorner].ifro = ifro;
-              corners[indCorner].jto = jto;
-              corners[indCorner].jfro = jfro;
-              corners[indCorner].kto = kto;
-              corners[indCorner].kfro = kfro;
-              corners[indCorner].in = in;
-              corners[indCorner].jn = jn;
-              corners[indCorner].kn = kn;
-              corners[indCorner].yeePtrFrom = &mesh; 
-              UniIter::UniIterCU::reg(mesh); 
-              UniIter::UniIterCU::reg(mpr); 
-              corners[indCorner].yeePtrTo = &mpr;
-              corners[indCorner].yeePtrTo = &mpr;
-              indCorner++;
-              */
             } 
             ind++;
           } // 3D cases with kn != 0
@@ -840,55 +926,7 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
       } // kn
     } // jn
   } // in
-/*
-  UniIter::sync();
 
-    UniIter::iterate3D([=] DEVCALLABLE (int f8, int g ,int h, BlockCopyParam *corners){
-      int f = f8%halo;
-      int targetParam = f8/halo;
-
-
-      int ito = corners[targetParam].ito;
-      int ifro = corners[targetParam].ifro;
-      int jto = corners[targetParam].jto;
-      int jfro = corners[targetParam].jfro;
-      int kto  = corners[targetParam].kto ;
-      int kfro = corners[targetParam].kfro;
-      int in = corners[targetParam].in;
-      int jn = corners[targetParam].jn;
-      int kn = corners[targetParam].kn;
-
-      YeeLattice &rhs_in = *(corners[targetParam].yeePtrTo);
-      YeeLattice &lhs_in = *(corners[targetParam].yeePtrFrom);
-
-      
-      lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.ez(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
-
-      lhs_in.bx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.by(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.bz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
-
-      lhs_in.jx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
-    }, halo*8, halo, halo, corners);
-
-/*
-  for (int i = 0; i < 8; i++)
-  {
-      YeeLattice *yeePtrFrom = corners[i].yeePtrFrom;
-      YeeLattice *yeePtrTo = corners[i].yeePtrTo;
-    copy_point_yee_halo(
-      *yeePtrFrom, 
-      *yeePtrTo, 
-      halo, 
-      corners[i].ito, corners[i].ifro, corners[i].jto, corners[i].jfro, corners[i].kto, 
-      corners[i].kfro, corners[i].in, corners[i].jn, corners[i].kn, ind);
-    ind++;
-  }
-  */
   
   UniIter::sync();
 
@@ -1195,61 +1233,36 @@ std::vector<mpi::request> Tile<D>::send_data(
 
   if (mode == 0) {
     
-    yee.gatherCommData(yee.jx, yee.jx_comm);
-    yee.gatherCommData(yee.jy, yee.jy_comm);
-    yee.gatherCommData(yee.jz, yee.jz_comm);
-
-/*
-    real_short *dataPrtX = yee.jx.data();
-    real_short *dataPrtY = yee.jy.data();
-    real_short *dataPrtZ = yee.jz.data();
-
-    UniIter::iterate([] DEVCALLABLE (int i, int *indexes, 
-      real_short *inDataX, real_short *inDataY, real_short *inDataZ, 
-      real_short* commBufferX, real_short* commBufferY, real_short* commBufferZ){
-      commBufferX[i] = inDataY[indexes[i]];
-      commBufferY[i] = inDataY[indexes[i]];
-      commBufferZ[i] = inDataZ[indexes[i]];
-    }, yee.commSize, yee.commIndexesArr, dataPrtX,dataPrtY,dataPrtZ, yee.jx_comm,yee.jy_comm,yee.jz_comm);
-*/
+    yee.gatherCommData(yee.jx, yee.x_comm);
+    yee.gatherCommData(yee.jy, yee.y_comm);
+    yee.gatherCommData(yee.jz, yee.z_comm);
     UniIter::sync();
 
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 0), yee.jx_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 1), yee.jy_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 2), yee.jz_comm, yee.commSize) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 0), yee.x_comm, yee.commSize) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 1), yee.y_comm, yee.commSize) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 2), yee.z_comm, yee.commSize) );
   } else if (mode == 1) {
-    yee.gatherCommData(yee.ex, yee.ex_comm);
-    yee.gatherCommData(yee.ey, yee.ey_comm);
-    yee.gatherCommData(yee.ez, yee.ez_comm);
 
-/*
-    real_short *dataPrtX = yee.ex.data();
-    real_short *dataPrtY = yee.ey.data();
-    real_short *dataPrtZ = yee.ez.data();
 
-    UniIter::iterate([] DEVCALLABLE (int i, int *indexes, 
-      real_short *inDataX, real_short *inDataY, real_short *inDataZ, 
-      real_short* commBufferX, real_short* commBufferY, real_short* commBufferZ){
-      commBufferX[i] = inDataY[indexes[i]];
-      commBufferY[i] = inDataY[indexes[i]];
-      commBufferZ[i] = inDataZ[indexes[i]];
-    }, yee.commSize, yee.commIndexesArr, dataPrtX,dataPrtY,dataPrtZ, yee.ex_comm,yee.ey_comm,yee.ez_comm);
-  */
+    yee.gatherCommData(yee.ex, yee.x_comm);
+    yee.gatherCommData(yee.ey, yee.y_comm);
+    yee.gatherCommData(yee.ez, yee.z_comm);
+
     UniIter::sync();
-
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 3), yee.ex_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 4), yee.ey_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 5), yee.ez_comm, yee.commSize) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 3), yee.x_comm, yee.commSize) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 4), yee.y_comm, yee.commSize) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 5), yee.z_comm, yee.commSize) );
   } else if (mode == 2) {
 
-    yee.gatherCommData(yee.bx, yee.bx_comm);
-    yee.gatherCommData(yee.by, yee.by_comm);
-    yee.gatherCommData(yee.bz, yee.bz_comm);
+
+    yee.gatherCommData(yee.bx, yee.x_comm);
+    yee.gatherCommData(yee.by, yee.y_comm);
+    yee.gatherCommData(yee.bz, yee.z_comm);
     UniIter::sync();
 
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 6), yee.bx_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 7), yee.by_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 8), yee.bz_comm, yee.commSize) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 6), yee.x_comm, yee.commSize) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 7), yee.y_comm, yee.commSize) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 8), yee.z_comm, yee.commSize) );
   }
   nvtxRangePop();
 
@@ -1277,32 +1290,32 @@ std::vector<mpi::request> Tile<D>::recv_data(
   std::vector<mpi::request> reqs;
 
   if (mode == 0) {
-    ( comm.recv(orig, get_tag(tag, 0), yee.jx_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 1), yee.jy_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 2), yee.jz_comm, yee.commSize) );
+    ( comm.recv(orig, get_tag(tag, 0), yee.x_comm, yee.commSize) );
+    ( comm.recv(orig, get_tag(tag, 1), yee.y_comm, yee.commSize) );
+    ( comm.recv(orig, get_tag(tag, 2), yee.z_comm, yee.commSize) );
 
-    yee.scatterCommData(yee.jx, yee.jx_comm);
-    yee.scatterCommData(yee.jy, yee.jy_comm);
-    yee.scatterCommData(yee.jz, yee.jz_comm);
-UniIter::sync();
+    yee.scatterCommData(yee.jx, yee.x_comm);
+    yee.scatterCommData(yee.jy, yee.y_comm);
+    yee.scatterCommData(yee.jz, yee.z_comm);
+    UniIter::sync();
+
   } else if (mode == 1) {
-    ( comm.recv(orig, get_tag(tag, 3), yee.ex_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 4), yee.ey_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 5), yee.ez_comm, yee.commSize) );
-
-    yee.scatterCommData(yee.ex, yee.ex_comm);
-    yee.scatterCommData(yee.ey, yee.ey_comm);
-    yee.scatterCommData(yee.ez, yee.ez_comm);
-UniIter::sync();
+    ( comm.recv(orig, get_tag(tag, 3), yee.x_comm, yee.commSize) );
+    ( comm.recv(orig, get_tag(tag, 4), yee.y_comm, yee.commSize) );
+    ( comm.recv(orig, get_tag(tag, 5), yee.z_comm, yee.commSize) );
+    
+    yee.scatterCommData(yee.ex, yee.x_comm);
+    yee.scatterCommData(yee.ey, yee.y_comm);
+    yee.scatterCommData(yee.ez, yee.z_comm);
+    UniIter::sync();
   } else if (mode == 2) {
-    ( comm.recv(orig, get_tag(tag, 6), yee.bx_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 7), yee.by_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 8), yee.bz_comm, yee.commSize) );
-
-    yee.scatterCommData(yee.bx, yee.bx_comm);
-    yee.scatterCommData(yee.by, yee.by_comm);
-    yee.scatterCommData(yee.bz, yee.bz_comm);
-UniIter::sync();
+    ( comm.recv(orig, get_tag(tag, 6), yee.x_comm, yee.commSize) );
+    ( comm.recv(orig, get_tag(tag, 7), yee.y_comm, yee.commSize) );
+    ( comm.recv(orig, get_tag(tag, 8), yee.z_comm, yee.commSize) );
+    yee.scatterCommData(yee.bx, yee.x_comm);
+    yee.scatterCommData(yee.by, yee.y_comm);
+    yee.scatterCommData(yee.bz, yee.z_comm);
+    UniIter::sync();
   }
 
   nvtxRangePop();
@@ -1349,36 +1362,25 @@ void YeeLattice::generateCommIndexes()
   }
 
 // todo: these need to be freeed
-  ex_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  ey_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  ez_comm = UniAllocator::allocateScratch<real_short>(commSize);
+  x_comm = UniAllocator::allocateScratch<real_short>(commSize);
+  y_comm = UniAllocator::allocateScratch<real_short>(commSize);
+  z_comm = UniAllocator::allocateScratch<real_short>(commSize);
   
-  /// Magnetic field 
-  bx_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  by_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  bz_comm = UniAllocator::allocateScratch<real_short>(commSize);
-    
-  /// Current vector 
-  jx_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  jy_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  jz_comm = UniAllocator::allocateScratch<real_short>(commSize);
 }
 
 
-void YeeLattice::gatherCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer)
+void YeeLattice::gatherCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short*& commBuffer)
 {
-  real_short *dataPrt = inMesh.data();
   UniIter::iterate([] DEVCALLABLE (int i, int *indexes, real_short *inData, real_short* commBuffer){
     commBuffer[i] = inData[indexes[i]];
-  }, commSize, commIndexesArr, dataPrt, commBuffer);
+  }, commSize, commIndexesArr, inMesh.data(), commBuffer);
 }
 
-void YeeLattice::scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer)
+void YeeLattice::scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short*& commBuffer)
 {
-  real_short *dataPrt = inMesh.data();
   UniIter::iterate([] DEVCALLABLE (int i, int* indexes, real_short *inData, real_short* commBuffer){
     inData[indexes[i]] = commBuffer[i];
-  }, commSize, commIndexesArr, dataPrt, commBuffer);
+  }, commSize, commIndexesArr, inMesh.data(), commBuffer);
 }
 
 //--------------------------------------------------
