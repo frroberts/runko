@@ -14,7 +14,7 @@ namespace ffe {
 template<std::size_t D>
 class Tile : 
   virtual public fields::Tile<D>, 
-  virtual public corgi::Tile<D> 
+  virtual public corgi::Tile<D>
 {
 
   public:
